@@ -1,0 +1,27 @@
+{
+  "name": "metronome",
+  "version": "1.0.0",
+  "description": "Bitly backend coding challenge - click counter for shortened URLs",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "csv-parse": "^6.1.0",
+    "pino": "^10.3.0",
+    "stream-json": "^1.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
