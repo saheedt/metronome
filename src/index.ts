@@ -8,6 +8,10 @@ import {
   YEAR_PATTERN,
   EXIT_INPUT_ERROR,
   EXIT_RUNTIME_ERROR,
+  ERR_INVALID_YEAR,
+  ERR_FILE_NOT_FOUND,
+  ERR_PROCESSING_FAILED,
+  ERR_UNEXPECTED,
 } from "./constants.js";
 
 async function main(): Promise<void> {
@@ -27,7 +31,7 @@ async function main(): Promise<void> {
   };
 
   if (!YEAR_PATTERN.test(year)) {
-    logger.error({ year }, "Invalid year format. Expected 4-digit year (e.g., 2021)");
+    logger.error({ year }, ERR_INVALID_YEAR);
     process.exit(EXIT_INPUT_ERROR);
   }
 
@@ -42,12 +46,12 @@ async function main(): Promise<void> {
   } catch (error) {
     if (error instanceof Error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        logger.error({ error: error.message }, "File not found");
-        process.exit(EXIT_RUNTIME_ERROR);
+        logger.error({ error: error.message }, ERR_FILE_NOT_FOUND);
+        process.exit(EXIT_INPUT_ERROR);
       }
-      logger.error({ error: error.message }, "Processing failed");
+      logger.error({ error: error.message }, ERR_PROCESSING_FAILED);
     } else {
-      logger.error({ error }, "Unexpected error");
+      logger.error({ error }, ERR_UNEXPECTED);
     }
     process.exit(EXIT_RUNTIME_ERROR);
   }

@@ -12,3 +12,26 @@ export const YEAR_PATTERN = /^\d{4}$/;
 export const EXIT_SUCCESS = 0;
 export const EXIT_INPUT_ERROR = 1;
 export const EXIT_RUNTIME_ERROR = 2;
+
+// --- Log messages (static) ---
+
+export const LOG_LOADING_ENCODES = "Loading encodes";
+export const LOG_ENCODES_LOADED = "Encodes loaded";
+export const LOG_LOADING_DECODES = "Loading decodes";
+export const LOG_DECODE_COMPLETE = "Decode processing complete";
+export const LOG_DUPLICATE_BITLINK = "Duplicate bitlink: overwriting mapping";
+export const LOG_SKIPPING_RECORD = "Skipping record with missing fields";
+export const LOG_NO_ENCODES_LOADED = "No encodes loaded, skipping decode processing";
+
+// --- Error messages ---
+
+export const ERR_INVALID_YEAR = "Invalid year format. Expected 4-digit year (e.g., 2021)";
+export const ERR_FILE_NOT_FOUND = "File not found";
+export const ERR_PROCESSING_FAILED = "Processing failed";
+export const ERR_UNEXPECTED = "Unexpected error";
+
+export const errUnsupportedFormat = (ext: string): string =>
+  `Unsupported file format: ${ext}. Only ${SUPPORTED_EXTENSIONS.join(", ")} files are supported.`;
+
+export const errMissingFields = (filePath: string, missing: string[], found: string[]): string =>
+  `File ${filePath} is missing required fields: [${missing.join(", ")}]. Found: [${found.join(", ")}]`;
