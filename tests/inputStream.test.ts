@@ -102,5 +102,28 @@ describe("createInputStream", () => {
         )
       ).rejects.toThrow(/Unsupported file format/);
     });
+
+    it("throws a descriptive error on malformed JSON", async () => {
+      await expect(
+        collect(
+          createInputStream(path.join(FIXTURES, "malformed.json"), [
+            "bitlink",
+            "timestamp",
+          ])
+        )
+      ).rejects.toThrow(/JSON Syntax Error/); 
+    });
+
+    it("throws a descriptive error on malformed CSV", async () => {
+      await expect(
+        collect(
+          createInputStream(path.join(FIXTURES, "malformed.csv"), [
+            "long_url",
+            "domain",
+            "hash",
+          ])
+        )
+      ).rejects.toThrow(/CSV Syntax Error/);
+    });
   });
 });

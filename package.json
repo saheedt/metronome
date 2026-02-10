@@ -4,7 +4,9 @@
   "description": "Bitly backend coding challenge - click counter for shortened URLs",
   "type": "module",
   "scripts": {
-    "start": "tsx src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

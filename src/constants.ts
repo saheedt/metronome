@@ -35,3 +35,5 @@ export const errUnsupportedFormat = (ext: string): string =>
 
 export const errMissingFields = (filePath: string, missing: string[], found: string[]): string =>
   `File ${filePath} is missing required fields: [${missing.join(", ")}]. Found: [${found.join(", ")}]`;
+
+export const errFileSyntax = (fileType: string, filePath: string, message: string) => `${fileType} Syntax Error in file '${filePath}': ${message}`;

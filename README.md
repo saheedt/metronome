@@ -29,16 +29,18 @@ A CLI tool that processes Bitly click event data and calculates click counts per
 
 ```bash
 npm install
+npm run build
 ```
 
 ## Usage
 
-All commands can be run via `npm start` or directly with `npx tsx`:
-
 ```bash
+# Production: compile once, run with Node
+npm run build
 npm start -- [flags]
-# or
-npx tsx src/index.ts [flags]
+
+# Development: run directly with tsx (no build step)
+npm run dev -- [flags]
 ```
 
 ### Examples
@@ -48,13 +50,13 @@ npx tsx src/index.ts [flags]
 npm start
 
 # Custom year
-npx tsx src/index.ts --year 2022
+npm run dev -- --year 2022
 
 # Custom file paths
 npm start -- --encodes ./path/to/encodes.csv --decodes ./path/to/decodes.json
 
 # Mix formats (CSV encodes, JSON decodes or vice versa)
-npx tsx src/index.ts --encodes ./encodes.json --decodes ./decodes.csv
+npm run dev -- --encodes ./encodes.json --decodes ./decodes.csv
 
 # Everything custom
 npm start -- --encodes ./encodes.json --decodes ./decodes.csv --year 2020
@@ -79,7 +81,7 @@ JSON array to stdout, sorted descending by click count:
 All log messages go to stderr (via pino), so output is pipe-friendly:
 
 ```bash
-npx tsx src/index.ts 2>/dev/null | jq '.'
+npm start 2>/dev/null | jq '.'
 ```
 
 ## Testing
@@ -100,8 +102,10 @@ npm run typecheck
 ### Why TypeScript
 Strict typing catches field name mismatches and structural errors at compile time rather than at runtime with silent `undefined` lookups. Critical for a data pipeline where wrong field names produce wrong results with no error.
 
-### Why streaming for both inputs
-Both encode and decode files are streamed using `csv-parse` (async API) and `stream-json` + `StreamArray`. This keeps memory bounded regardless of file size. The encode file could also grow large (millions of shortened URLs), so streaming it prevents memory issues. Only the BitlinkStore (one entry per encode) and the click counter (one entry per unique long URL) are held in memory.
+### Stream-Based Architecture
+**Decodes (Log Data):** The decode file is treated as an unbounded stream. Records are processed one-by-one and immediately discarded. This ensures the application runs with constant O(1) memory relative to the size of the decode file, allowing it to process terabytes of logs without crashing.
+
+**Encodes (Lookup Data):** The encode file is streamed to optimize ingestion efficiency. Streaming prevents the engine from loading the entire raw file string into RAM before parsing, which significantly reduces peak memory pressure during startup. Note: While streaming optimizes the read phase, the application currently stores the parsed mappings in an in-memory Map (O(E) space). If the encodes dataset itself exceeds available RAM, the BitlinkStore backend would need to be swapped for an on-disk key-value store (like LevelDB), as detailed in the Future Enhancements section.
 
 ### BitlinkStore abstraction
 The `BitlinkStore` class wraps a `Map<string, string>` with a clear interface (`set`, `get`, `has`, `size`). This abstraction exists so the backing storage can be swapped later (e.g., to LevelDB for datasets that don't fit in memory) without touching the processor or any business logic.

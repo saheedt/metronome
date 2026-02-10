@@ -9,7 +9,7 @@ This document describes how AI tools were used during the development of this pr
 ## How AI Was Used
 
 ### Planning
-AI was used to analyze the challenge requirements, explore the data files to understand their shape and content, and design the implementation plan including module dependency order and testing strategy.
+AI was used to analyze the challenge requirements based entirely on the prompt supplied, explore the sample data files to understand their shape and content, and design the implementation plan including module dependency order and testing strategy.
 
 ### Implementation
 Code was generated module-by-module in bottom-up dependency order:
@@ -395,7 +395,9 @@ The following prompt was provided as the starting point for the entire implement
 - **Normalization ownership refactor**: After initial AI implementation, reviewed the code and identified that normalization was split between the processor and the store. Provided specific feedback (6 items) directing the AI to make the store the single owner of normalization. The AI did not identify this design issue on its own.
 - **Magic string centralization**: After reviewing the codebase, directed the AI to extract all inline error and log message strings into `constants.ts`. The AI generated working code but needed explicit guidance on what the problem was.
 - **Empty encodes early return**: Identified that the processor would unnecessarily stream and process the entire decodes file even when no encodes were loaded (empty file or all records skipped). Added an early return at `processor.ts:47-50` that checks `store.size === 0`, logs a message (`LOG_NO_ENCODES_LOADED`), and returns an empty array immediately, skipping the decode phase entirely. The AI did not account for this edge case.
-- **README improvements**: Reviewed AI-generated docs and directed additions (install links, dependency tables). The AI produced solid first drafts but they needed human review to ensure completeness and accuracy.
+- **Malformed file error handling**: The AI's original `streamCsv` and `streamJson` implementations piped streams directly without forwarding errors between them, meaning a file read error or parser syntax error could silently hang or crash the program. Rewrote both functions to explicitly forward upstream errors (`fileStream.on('error', ...)` destroying the downstream parser/streamArray), wrap the `for await` loop in try/catch to detect parser-specific errors (mismatched quotes in CSV, unexpected tokens in JSON), and rethrow with a clear `errFileSyntax` message including the file type, path, and original error. Added the `errFileSyntax` constant function to `constants.ts`. The AI did not handle piped stream error propagation or malformed file detection. I also expanded the tests to verify the error was handled.
+- **Production build step**: The AI left `tsx` (runtime TypeScript compilation) as the production run command, which adds unnecessary overhead. Added a proper build pipeline: created `tsconfig.build.json` (extends base config, emits to `dist/`), updated `package.json` scripts so `start` runs `node dist/index.js`, and added a `dev` script to keep `tsx` available for development. Updated README usage accordingly. The AI did not distinguish between development and production execution.
+- **README improvements**: Reviewed AI-generated docs and directed additions (install links, dependency tables). The AI produced solid first drafts but it needed human review to ensure completeness and accuracy.
 
 ## When AI Assistance Was Used vs. Manual Implementation
 
@@ -403,12 +405,14 @@ The following prompt was provided as the starting point for the entire implement
 - **Boilerplate and scaffolding**: package.json, tsconfig.json, vitest config, stub files, test fixtures. Repetitive setup that benefits from speed over creativity.
 - **Implementation of well-specified modules**: When the architecture, interfaces, and edge cases were clearly defined in the prompt, the AI produced correct implementations on the first pass (normalizer, store, processor).
 - **Test generation**: Given the function signatures and expected behaviors, the AI generated comprehensive test suites including edge cases (empty files, branded domains, boundary timestamps).
-- **Data analysis**: Counting clicks in the raw decode data to determine expected test output — tedious manual work that the AI handled accurately.
+- **Data analysis**: Counting clicks in the raw decode data to determine expected test output, tedious manual work that the AI handled accurately.
 
 ### Manual judgment was needed for:
 - **Architecture review**: Identifying that normalization responsibility was split across modules required understanding the design intent, not just the code. The AI implemented what was asked but didn't flag the design smell.
 - **Code quality feedback**: Noticing the `as unknown as` double-casts, unused `entries()` method, and string-interpolated pino logs required reading the code with an experienced eye.
 - **Documentation completeness**: Knowing what a reviewer expects in a README (install links, dependency table) vs. what the AI included by default.
+
+- **Edge case identification**: Running various usage scenarios program to catch edge cases the AI did not account for. E.g: Malformed input files or general data parser errors.
 
 ## Challenges with AI-Generated Code
 
@@ -425,4 +429,4 @@ The following prompt was provided as the starting point for the entire implement
 - The architectural decisions and design constraints were specified in the challenge prompt
 - The data files (`encodes.csv`, `decodes.json`) were provided as-is
 - All code was reviewed and approved before committing
-- Design review feedback (normalization ownership, magic strings, type cast cleanup) & edge case fixing were human-driven
+- Design review feedback (normalization ownership, magic strings, type cast cleanup) & edge case fixing were all human.
