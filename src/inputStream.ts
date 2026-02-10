@@ -60,7 +60,7 @@ async function* streamCsv(
 				validateFields(record, requiredFields, filePath);
 				validated = true;
 			}
-			const missing = requiredFields.filter((f) => !record[f]);
+			const missing = requiredFields.filter((f) => !(f in record));
 			if (missing.length > 0) {
 				logger.warn({ index, missing }, LOG_SKIPPING_RECORD);
 				index++;
@@ -70,13 +70,8 @@ async function* streamCsv(
 			index++;
 		}
 	} catch (error) {
-		if (error instanceof Error) {
-			const isCsvError =
-				error.message.includes('Quote') ||
-				error.message.includes('Invalid Record Length') ||
-				error.message.includes('Invalid Opening Quote');
-			if (isCsvError)
-				throw new Error(errFileSyntax('CSV', filePath, error.message));
+		if (error instanceof Error && 'code' in error) {
+			throw new Error(errFileSyntax('CSV', filePath, error.message));
 		}
 		throw error;
 	}

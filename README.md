@@ -139,13 +139,12 @@ Multiple bitlinks pointing to the same long URL is normal (different campaigns, 
 - **Memory**: O(E) for the BitlinkStore + O(U) for the click counter. Decode records are streamed one at a time.
 
 ## Assumptions
-
 - CSV files always have a header row as the first line. Headers map directly to field names used in the code (`long_url`, `domain`, `hash` for encodes; `bitlink`, `timestamp`, etc. for decodes). The parser uses these headers as object keys via `csv-parse`'s `columns: true` option.
 - The provided data files are representative of the expected format. The system validates headers on the first record and will reject files with unexpected column names.
-- Timestamps are always in ISO 8601 format where the first 4 characters represent the year.
+- Timestamps are always in ISO 8601 format where the first 4 characters represent the year and use a consistent format across entire dataset. Given these assumptions, year filtering is implemented using a string prefix check (`timestamp.startsWith(year)`), which avoids full timestamp parsing and provides significantly better performance for large datasets.
+- A duplicate bitlink (same domain + hash mapping to different long URLs) is treated as anomalous. Multiple bitlinks pointing to the same long URL is normal (different campaigns, different domains), but a single bitlink resolving to two different long URLs suggests a data integrity issue. The system uses last-write-wins and logs a warning so the behavior is visible without crashing.
 
 ## Supported File Formats
-
 Only `.csv` and `.json` files are supported. Files with any other extension are rejected with a clear error message. This is a deliberate scope boundary.
 
 ## Future Enhancements
