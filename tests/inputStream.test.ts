@@ -1,129 +1,193 @@
-import { describe, it, expect, vi } from "vitest";
-import path from "node:path";
-import { createInputStream } from "../src/inputStream.js";
+import { describe, it, expect, vi } from 'vitest';
+import path from 'node:path';
+import { createInputStream } from '../src/inputStream.js';
 
-vi.mock("../src/logger.js", () => ({
-  logger: {
-    warn: vi.fn(),
-    info: vi.fn(),
-    error: vi.fn(),
-  },
+vi.mock('../src/logger.js', () => ({
+	logger: {
+		warn: vi.fn(),
+		info: vi.fn(),
+		error: vi.fn(),
+	},
 }));
 
-const FIXTURES = path.resolve("tests/fixtures");
+const FIXTURES = path.resolve('tests/fixtures');
 
 async function collect(
-  iterable: AsyncIterable<Record<string, string>>
+	iterable: AsyncIterable<Record<string, string>>,
 ): Promise<Record<string, string>[]> {
-  const records: Record<string, string>[] = [];
-  for await (const record of iterable) {
-    records.push(record);
-  }
-  return records;
+	const records: Record<string, string>[] = [];
+	for await (const record of iterable) {
+		records.push(record);
+	}
+	return records;
 }
 
-describe("createInputStream", () => {
-  describe("CSV parsing", () => {
-    it("parses CSV into objects with correct keys", async () => {
-      const records = await collect(
-        createInputStream(path.join(FIXTURES, "small-encodes.csv"), [
-          "long_url",
-          "domain",
-          "hash",
-        ])
-      );
-      expect(records).toHaveLength(2);
-      expect(records[0]).toHaveProperty("long_url", "https://google.com/");
-      expect(records[0]).toHaveProperty("domain", "bit.ly");
-      expect(records[0]).toHaveProperty("hash", "31Tt55y");
-    });
+describe('createInputStream', () => {
+	describe('CSV parsing', () => {
+		it('parses CSV into objects with correct keys', async () => {
+			const records = await collect(
+				createInputStream(path.join(FIXTURES, 'small-encodes.csv'), [
+					'long_url',
+					'domain',
+					'hash',
+				]),
+			);
+			expect(records).toHaveLength(2);
+			expect(records[0]).toHaveProperty('long_url', 'https://google.com/');
+			expect(records[0]).toHaveProperty('domain', 'bit.ly');
+			expect(records[0]).toHaveProperty('hash', '31Tt55y');
+		});
 
-    it("handles empty CSV (headers only)", async () => {
-      const records = await collect(
-        createInputStream(path.join(FIXTURES, "empty.csv"), [
-          "long_url",
-          "domain",
-          "hash",
-        ])
-      );
-      expect(records).toHaveLength(0);
-    });
+		it('handles empty CSV (headers only)', async () => {
+			const records = await collect(
+				createInputStream(path.join(FIXTURES, 'empty.csv'), [
+					'long_url',
+					'domain',
+					'hash',
+				]),
+			);
+			expect(records).toHaveLength(0);
+		});
 
-    it("rejects CSV with wrong headers", async () => {
-      await expect(
-        collect(
-          createInputStream(path.join(FIXTURES, "bad-headers.csv"), [
-            "long_url",
-            "domain",
-            "hash",
-          ])
-        )
-      ).rejects.toThrow(/missing required fields/);
-    });
-  });
+		it('rejects CSV with wrong headers', async () => {
+			await expect(
+				collect(
+					createInputStream(path.join(FIXTURES, 'bad-headers.csv'), [
+						'long_url',
+						'domain',
+						'hash',
+					]),
+				),
+			).rejects.toThrow(/missing required fields/);
+		});
 
-  describe("JSON parsing", () => {
-    it("parses JSON array into objects with correct keys", async () => {
-      const records = await collect(
-        createInputStream(path.join(FIXTURES, "small-decodes.json"), [
-          "bitlink",
-          "timestamp",
-        ])
-      );
-      expect(records).toHaveLength(3);
-      expect(records[0]).toHaveProperty("bitlink", "http://bit.ly/31Tt55y");
-      expect(records[0]).toHaveProperty("timestamp");
-    });
+		it('skips records with empty required fields but continues processing', async () => {
+			const records = await collect(
+				createInputStream(path.join(FIXTURES, 'missing-empty.csv'), [
+					'long_url',
+					'domain',
+					'hash',
+				]),
+			);
 
-    it("handles empty JSON array", async () => {
-      const records = await collect(
-        createInputStream(path.join(FIXTURES, "empty.json"), [
-          "bitlink",
-          "timestamp",
-        ])
-      );
-      expect(records).toHaveLength(0);
-    });
-  });
+			expect(records).toHaveLength(1);
+			expect(records[0]).toEqual({
+				long_url: 'https://github.com/',
+				domain: 'bit.ly',
+				hash: '31Tt55y',
+			});
+		});
 
-  describe("error handling", () => {
-    it("throws on file not found", async () => {
-      await expect(
-        collect(
-          createInputStream("/nonexistent/file.csv", ["a"])
-        )
-      ).rejects.toThrow();
-    });
+		it('does not treat falsy-but-present CSV values as missing', async () => {
+			const records = await collect(
+				createInputStream(path.join(FIXTURES, 'missing-falsy.csv'), [
+					'long_url',
+					'domain',
+					'hash',
+				]),
+			);
 
-    it("throws on unsupported file extension", async () => {
-      await expect(
-        collect(
-          createInputStream("data.xml", ["a"])
-        )
-      ).rejects.toThrow(/Unsupported file format/);
-    });
+			expect(records).toHaveLength(1);
+			expect(records[0]).toEqual({
+				long_url: 'https://example.com/',
+				domain: 'bit.ly',
+				hash: '0',
+			});
+		});
+	});
 
-    it("throws a descriptive error on malformed JSON", async () => {
-      await expect(
-        collect(
-          createInputStream(path.join(FIXTURES, "malformed.json"), [
-            "bitlink",
-            "timestamp",
-          ])
-        )
-      ).rejects.toThrow(/JSON Syntax Error/); 
-    });
+	describe('JSON parsing', () => {
+		it('parses JSON array into objects with correct keys', async () => {
+			const records = await collect(
+				createInputStream(path.join(FIXTURES, 'small-decodes.json'), [
+					'bitlink',
+					'timestamp',
+				]),
+			);
+			expect(records).toHaveLength(3);
+			expect(records[0]).toHaveProperty('bitlink', 'http://bit.ly/31Tt55y');
+			expect(records[0]).toHaveProperty('timestamp');
+		});
 
-    it("throws a descriptive error on malformed CSV", async () => {
-      await expect(
-        collect(
-          createInputStream(path.join(FIXTURES, "malformed.csv"), [
-            "long_url",
-            "domain",
-            "hash",
-          ])
-        )
-      ).rejects.toThrow(/CSV Syntax Error/);
-    });
-  });
+		it('handles empty JSON array', async () => {
+			const records = await collect(
+				createInputStream(path.join(FIXTURES, 'empty.json'), [
+					'bitlink',
+					'timestamp',
+				]),
+			);
+			expect(records).toHaveLength(0);
+		});
+
+    it('skips records with empty required fields but continues processing', async () => {
+			const records = await collect(
+				createInputStream(path.join(FIXTURES, 'missing-empty.json'), [
+					'long_url',
+					'domain',
+					'hash',
+				]),
+			);
+
+			expect(records).toHaveLength(1);
+			expect(records[0]).toEqual({
+				long_url: 'https://github.com/',
+				domain: 'bit.ly',
+				hash: '31Tt55y',
+			});
+		});
+
+		it('does not treat falsy-but-present JSON values as missing', async () => {
+			const records = await collect(
+				createInputStream(path.join(FIXTURES, 'missing-falsy.json'), [
+					'long_url',
+					'domain',
+					'hash',
+				]),
+			);
+
+			expect(records).toHaveLength(1);
+			expect(records[0]).toEqual({
+				long_url: 'https://example.com/',
+				domain: 'bit.ly',
+				hash: '0',
+			});
+		});
+	});
+
+	describe('error handling', () => {
+		it('throws on file not found', async () => {
+			await expect(
+				collect(createInputStream('/nonexistent/file.csv', ['a'])),
+			).rejects.toThrow();
+		});
+
+		it('throws on unsupported file extension', async () => {
+			await expect(
+				collect(createInputStream('data.xml', ['a'])),
+			).rejects.toThrow(/Unsupported file format/);
+		});
+
+		it('throws a descriptive error on malformed JSON', async () => {
+			await expect(
+				collect(
+					createInputStream(path.join(FIXTURES, 'malformed.json'), [
+						'bitlink',
+						'timestamp',
+					]),
+				),
+			).rejects.toThrow(/JSON Syntax Error/);
+		});
+
+		it('throws a descriptive error on malformed CSV', async () => {
+			await expect(
+				collect(
+					createInputStream(path.join(FIXTURES, 'malformed.csv'), [
+						'long_url',
+						'domain',
+						'hash',
+					]),
+				),
+			).rejects.toThrow(/CSV Syntax Error/);
+		});
+	});
 });

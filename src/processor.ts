@@ -9,6 +9,8 @@ import {
 	LOG_LOADING_DECODES,
 	LOG_DECODE_COMPLETE,
 	LOG_NO_ENCODES_LOADED,
+  LOG_SKIPPING_UNSUPPORTED_TIMESTAMP,
+  LOG_SKIPPING_NO_LONG_URL,
 } from './constants.js';
 import type { ClickCount } from './types.js';
 
@@ -67,12 +69,14 @@ export async function processClicks(
 		const { bitlink, timestamp } = record;
 
 		if (!timestamp.startsWith(year)) {
+      logger.warn({ bitlink, timestamp }, LOG_SKIPPING_UNSUPPORTED_TIMESTAMP);
 			continue;
 		}
 
 		const longUrl = store.get(bitlink);
 
 		if (!longUrl) {
+      logger.warn({ bitlink, timestamp }, LOG_SKIPPING_NO_LONG_URL);
 			continue;
 		}
 

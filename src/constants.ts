@@ -22,6 +22,8 @@ export const LOG_DECODE_COMPLETE = "Decode processing complete";
 export const LOG_DUPLICATE_BITLINK = "Duplicate bitlink: overwriting mapping";
 export const LOG_SKIPPING_RECORD = "Skipping record with missing fields";
 export const LOG_NO_ENCODES_LOADED = "No encodes loaded, skipping decode processing";
+export const LOG_SKIPPING_UNSUPPORTED_TIMESTAMP = "Skipping record with unsupported timestamp format";
+export const LOG_SKIPPING_NO_LONG_URL = "Skipping record without long url to aggregate on";
 
 // --- Error messages ---
 

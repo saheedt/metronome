@@ -60,7 +60,8 @@ async function* streamCsv(
 				validateFields(record, requiredFields, filePath);
 				validated = true;
 			}
-			const missing = requiredFields.filter((f) => !(f in record));
+      
+			const missing = requiredFields.filter((f) => !(f in record && record[f] !== ''));
 			if (missing.length > 0) {
 				logger.warn({ index, missing }, LOG_SKIPPING_RECORD);
 				index++;
@@ -104,7 +105,7 @@ async function* streamJson(
 				validated = true;
 			}
 
-			const missing = requiredFields.filter((f) => !(f in value));
+			const missing = requiredFields.filter((f) => !(f in value && value[f] !== ''));
 			if (missing.length > 0) {
 				logger.warn({ index, missing }, LOG_SKIPPING_RECORD);
 				index++;

@@ -21,7 +21,6 @@ describe("processClicks", () => {
     });
 
     expect(result).toHaveLength(2);
-    // google has 2 clicks (2021-01-01 and 2021-03-10), github has 1 (2021-06-15)
     expect(result[0]).toEqual({ "https://google.com/": 2 });
     expect(result[1]).toEqual({ "https://github.com/": 1 });
   });
@@ -59,8 +58,6 @@ describe("processClicks", () => {
       year: "2021",
     });
 
-    // Only google.com should have 1 click; github.com should have 0
-    // es.pn/3MgVNnZ is unmatched and should not appear
     const urls = result.map((entry) => Object.keys(entry)[0]);
     expect(urls).toContain("https://google.com/");
     expect(urls).toContain("https://github.com/");
@@ -111,7 +108,6 @@ describe("processClicks", () => {
       year: "2022",
     });
 
-    // No decodes in 2022 in our fixtures
     result2022.forEach((entry) => {
       expect(Object.values(entry)[0]).toBe(0);
     });
